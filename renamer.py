@@ -149,7 +149,7 @@ class ReNamer:
 	def add_suffix(self, suffix, display=True):
 		change_list = {
 
-		filename: self.get_suffixed(filename, suffix)
+		filename: ReNamer.get_suffixed(filename, suffix)
 		for filename in self.filenames if not filename.endswith(suffix)
 
 		} 
