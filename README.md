@@ -1,5 +1,5 @@
 # file_renamer
-Python solutions for bulk-renaming files. Use ReNamer object to interact with/change filenmaes within a desired directory.
+Python solutions for bulk-renaming files. Use ReNamer object to interact with/change filenames within a desired directory.
 
 # renamer.py
 - ReNamer class: takes a directory path, default is current working directory, allows for various filename manipulations over every file within directory.
