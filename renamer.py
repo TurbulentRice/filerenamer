@@ -48,7 +48,16 @@ class ReNamer:
 
 	@property
 	def filenames(self):
-		return os.listdir(self.directory)
+		# Get the list of filenames
+		files = os.listdir(self.directory)
+		# Try to remove this file from list, catch error if not in list
+		# EAFP: Easier to ask forgiveness that permission
+		try:
+			files.remove('renamer.py')
+		except ValueError:
+			pass
+		
+		return files
 	
 	#########################
 	#	QUICK METHODS
