@@ -108,10 +108,10 @@ class ReNamer:
 	def rename_these(self, files_to_change: dict, display=True):
 		# Display and verify changes to be made
 		if display:
-			print(f"{"-"*20}\nCHANGES:\n{"-"*20}")
+			print(f'{"-"*20}\nCHANGES:\n{"-"*20}')
 			for old, new in files_to_change.items():
 				print(f"{old}\t->\t{new}")
-		ans = input(f"Make these changes? (y/n): ")
+		ans = input(f'Make these changes? (y/n): ')
 		if ans != "y":
 			print("Changes discarded...\n")
 			return
@@ -128,15 +128,14 @@ class ReNamer:
 
 	# Replace every occurence of a string in every filename
 	def replace(self, change_this, to_this):
-		def is_in()
-		change_list = {
+                change_list = {
 
-		filename: filename.replace(change_this, to_this)
-		for filename in self.filenames if change_this in filename
+                        filename: filename.replace(change_this, to_this)
+                        for filename in self.filenames if change_this in filename
 
-		}
+                }
 		
-		self.rename_these(change_list)
+                self.rename_these(change_list)
 
 	# Replace multiple strings
 	def replace_these(self, ammendments: dict):
@@ -158,8 +157,8 @@ class ReNamer:
 	def add_suffix(self, suffix, display=True):
 		change_list = {
 
-		filename: ReNamer.get_suffixed(filename, suffix)
-		for filename in self.filenames if not filename.endswith(suffix)
+                        filename: ReNamer.get_suffixed(filename, suffix)
+                        for filename in self.filenames if not filename.endswith(suffix)
 
 		} 
 
