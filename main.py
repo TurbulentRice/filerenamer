@@ -18,13 +18,15 @@ from renamer import ReNamer
 #       e.g. my_folder.remove("delete") > my_folder.replace("delete", "")
 # - Reversal method for undoing previous change(s)
 
-path = "./renamer_test_images/"
-my_folder = ReNamer(path)
+if __name__ == "__main__":
+    path = "./renamer_test_images/"
+    my_folder = ReNamer(path)
 
-my_folder.show_dir()
+    my_folder.show_dir()
 
-#my_folder.replace("grab", "shot")
-#my_folder.add_prefix("screen_")
-#my_folder.add_suffix("-test")
+    my_folder.replace("grab", "shot")
+    #my_folder.replace("shot", "grab")
+    #my_folder.add_prefix("screen_")
+    #my_folder.add_suffix("-test")
 
-my_folder.show_dir()
+    my_folder.show_dir()
