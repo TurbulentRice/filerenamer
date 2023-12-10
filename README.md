@@ -16,8 +16,13 @@ source venv/bin/activate
 # Install package in edit mode
 pip install -e .
 
-# Run the entry point console script
-rename-files
+# Run the console script, optionally specifying target directory
+rename-files [--target TARGET_DIRECTORY]
+
+# Alternatively, run the script as a module
+python -m file_renamer [--target TARGET_DIRECTORY]
+
+# NOTE: TARGET_DIRECTORY path can be relative
 ```
 
 ## Usage

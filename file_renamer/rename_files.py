@@ -5,14 +5,20 @@ This script uses the FileReNamer class to batch rename files in a folder.
 Let FileReNamer know which directory to target by providing a path. Relative paths work too!
 """
 
+import argparse
 from .file_renamer import FileReNamer
+
+def get_args():
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--target", default=None, help="Specify the target directory.")
+  return parser.parse_args()
 
 def get_target_directory():
   user_input = input("Enter the path of the target directory (or press Enter to use the current directory): ").strip()
   return user_input if user_input else None
 
 def confirm_directory():
-  user_input = input("Continue with this directory? (y/n): ").strip()
+  user_input = input("Do these files look right? (y/n): ").strip()
   return user_input
 
 def hello():
@@ -22,24 +28,38 @@ def hello():
   | |_   _| | ___| |_/ /___|  \| | __ _ _ __ ___   ___ _ __ 
   |  _| | | |/ _ \    // _ \ . ` |/ _` | '_ ` _ \ / _ \ '__|
   | |   | | |  __/ |\ \  __/ |\  | (_| | | | | | |  __/ |   
-  \_|   |_|_|\___\_| \_\___\_| \_/\__,_|_| |_| |_|\___|_|   
+  \_|   |_|_|\___\_| \_\___\_| \_/\__,_|_| |_| |_|\___|_|                   
+  Press control + c (^c) at any time to exit
 
 """)
 
 def done():
   print("""
-  ____                   _ 
-  |  _ \  ___  _ __   ___| |
-  | | | |/ _ \| '_ \ / _ \ |
-  | |_| | (_) | | | |  __/_|
-  |____/ \___/|_| |_|\___(_)
+  ______                 _ 
+  |  _  \               | |
+  | | | |___  _ __   ___| |
+  | | | / _ \| '_ \ / _ \ |
+  | |/ / (_) | | | |  __/_|
+  |___/ \___/|_| |_|\___(_)
 
 """)
-  
+
+def goodbye():
+  print("""\n\n
+   _____                 _ _                _ 
+  |  __ \               | | |              | |
+  | |  \/ ___   ___   __| | |__  _   _  ___| |
+  | | __ / _ \ / _ \ / _` | '_ \| | | |/ _ \ |
+  | |_\ \ (_) | (_) | (_| | |_) | |_| |  __/_|
+   \____/\___/ \___/ \__,_|_.__/ \__, |\___(_)
+                                  __/ |       
+  Thanks for stopping by         |___/        
+
+""")
 
 def main():
   hello()
-  target_directory = None
+  target_directory = get_args().target
   # Main loop
   while True:
     try:
@@ -90,6 +110,6 @@ def main():
         print('Nothing selected. Doing nothing!\n')
     except ValueError as e:
       print(f"Error: {e}")
-
-if __name__ == "__main__":
-  main()
+    except KeyboardInterrupt:
+      goodbye()
+      break
