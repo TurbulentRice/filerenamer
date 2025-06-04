@@ -1,6 +1,6 @@
 # FileReNamer
 
-Effortlessly rename files in bulk with this Python program. Created to simplify the task of renaming a lot of files, it was written in the time it would have taken to manually fix the filename typo in those 2000 images I just exported...
+Easily rename files in bulk with this Python program. Created to simplify the task of renaming a lot of files, it was written in less time than it would have taken to manually fix the filename typo in those 2000 images I exported.
 
 ## Getting started
 
@@ -9,12 +9,8 @@ Effortlessly rename files in bulk with this Python program. Created to simplify 
 git clone https://github.com/TurbulentRice/file_renamer.git
 cd file_renamer/
 
-# Use a virtual environment (optional)
-python -m venv venv
-source venv/bin/activate
-
-# Install package in edit mode
-pip install -e .
+# Run the python launcher to create venv, install dependencies, and start the app
+python3 run.py
 
 # Run the console script, optionally specifying target directory
 rename-files [--target TARGET_DIRECTORY]

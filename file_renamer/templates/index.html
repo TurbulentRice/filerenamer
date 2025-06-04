@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FileRenamer GUI</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>FileRenamer</h1>
+
+  <div>
+    <!-- Action selector -->
+    <label>
+      Action:
+      <select id="actionSelect">
+        <option value="replace">Replace</option>
+        <option value="prefix">Add Prefix</option>
+        <option value="suffix">Add Suffix</option>
+        <option value="enum">Enumerate</option>
+      </select>
+    </label>
+
+    <!-- Inputs for “replace” -->
+    <span id="replaceInputs">
+      <label>Change this: <input type="text" id="replaceFrom" /></label>
+      <label>To this:     <input type="text" id="replaceTo"   /></label>
+    </span>
+
+    <!-- Inputs for prefix -->
+    <span id="prefixInputs" style="display:none;">
+      <label>Prefix: <input type="text" id="prefixValue" /></label>
+    </span>
+
+    <!-- Inputs for suffix -->
+    <span id="suffixInputs" style="display:none;">
+      <label>Suffix: <input type="text" id="suffixValue" /></label>
+    </span>
+
+    <!-- Inputs for enum -->
+    <span id="enumInputs" style="display:none;">
+      <label>Start #: <input type="number" id="enumStart" value="1" /></label>
+      <label>Separator: <input type="text" id="enumSep" value="_" /></label>
+      <label>Location:
+        <select id="enumLoc">
+          <option value="end">End</option>
+          <option value="start">Start</option>
+        </select>
+      </label>
+    </span>
+
+    <button class="button" id="previewBtn">Preview</button>
+  </div>
+
+  <!-- Preview table -->
+  <table id="previewTable">
+    <thead>
+      <tr>
+        <th>Old Name</th>
+        <th>New Name</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- JS will fill rows here -->
+    </tbody>
+  </table>
+
+  <button class="button" id="applyBtn" disabled>Rename Files</button>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
