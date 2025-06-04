@@ -21,11 +21,71 @@ Configuration:
 
 
 import os
-import threading
+import sys
+import subprocess
+import shutil
 import webbrowser
 from flask import Flask, jsonify, request
 from flask import send_from_directory
-import file_renamer.core as core   # your refactored logic
+from file_renamer.file_renamer import FileReNamer
+
+
+def prompt_for_directory(title: str = "Select folder to rename files in") -> str:
+    """
+    Cross-platform folder picker:
+      - macOS: use AppleScript via osascript (executes in separate process).
+      - Windows: use Tkinter’s askdirectory() (works on main thread).
+      - Linux: try 'zenity' first, then fallback to Tkinter.
+    Returns a POSIX path string or "" if the user canceled.
+    """
+    # macOS: use AppleScript via osascript
+    if sys.platform == "darwin":
+        apple_script = f'POSIX path of (choose folder with prompt "{title}")'
+        try:
+            output = subprocess.check_output(["osascript", "-e", apple_script])
+            return output.decode().strip()
+        except subprocess.CalledProcessError:
+            return ""
+    
+    # Windows: use Tkinter
+    if os.name == "nt":
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        folder = filedialog.askdirectory(title=title)
+        root.destroy()
+        return folder or ""
+    
+    # Linux: try 'zenity' first, else Tkinter
+    if sys.platform.startswith("linux"):
+        zenity_path = shutil.which("zenity")
+        if zenity_path:
+            try:
+                output = subprocess.check_output([zenity_path, "--file-selection", "--directory", "--title", title])
+                return output.decode().strip()
+            except subprocess.CalledProcessError:
+                return ""
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        folder = filedialog.askdirectory(title=title)
+        root.destroy()
+        return folder or ""
+    
+    # Fallback: Tkinter for other platforms
+    import tkinter as tk
+    from tkinter import filedialog
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    folder = filedialog.askdirectory(title=title)
+    root.destroy()
+    return folder or ""
+
 
 app = Flask(__name__)
 app.config["TARGET_DIR"] = None  # set after folder‐picker
@@ -60,24 +120,25 @@ def preview_mapping():
         return jsonify({"error": "No target directory set"}), 400
 
     action = data.get("action")
+    fr = FileReNamer(d)
     if action == "replace":
         change_this = data["change_this"]
         to_this     = data["to_this"]
-        mapping = core.build_replace_mapping(d, change_this, to_this)
+        mapping = fr.replace_mapping(change_this, to_this)
 
     elif action == "prefix":
         prefix = data["prefix"]
-        mapping = core.build_prefix_mapping(d, prefix)
+        mapping = fr.prefix_mapping(prefix)
 
     elif action == "suffix":
         suffix = data["suffix"]
-        mapping = core.build_suffix_mapping(d, suffix)
+        mapping = fr.suffix_mapping(suffix)
 
     elif action == "enum":
         start = int(data.get("start", 1))
         sep   = data.get("sep", "_")
         direction = data.get("loc", "end")
-        mapping = core.build_enum_mapping(d, start, sep, direction)
+        mapping = fr.enum_mapping(start, direction, sep)
 
     else:
         return jsonify({"error": "Unknown action"}), 400
@@ -98,39 +159,42 @@ def apply_mapping():
         return jsonify({"error": "No target directory set"}), 400
 
     # You could add more validation here (e.g., confirm no collisions)
-    core.apply_mapping(d, mapping)
+    fr = FileReNamer(d)
+    fr.apply_mapping(mapping)
     return jsonify({"status": "ok"}), 200
 
 
+# --- New route for changing directory via native dialog ---
+@app.route("/api/change-dir", methods=["POST"])
+def change_directory():
+    """
+    Open a native folder picker, set TARGET_DIR to the chosen folder,
+    and return the new file list.
+    """
+    folder = prompt_for_directory("Select new target directory")
+
+    if not folder or not os.path.isdir(folder):
+        return jsonify({"error": "No folder chosen or invalid directory"}), 400
+
+    app.config["TARGET_DIR"] = folder
+    files = sorted(os.listdir(folder))
+    return jsonify({"files": files, "target_dir": folder}), 200
+
+
 def main():
-    # 1) Let user pick a folder via a native dialog
-    import tkinter as tk
-    from tkinter import filedialog
-
-    root = tk.Tk()
-    root.withdraw()
-    root.attributes("-topmost", True)
-    folder = filedialog.askdirectory(title="Select folder to rename files in")
-    root.destroy()
-
+    # 1) Prompt for initial directory
+    folder = prompt_for_directory("Select folder to rename files in")
     if not folder:
         print("No folder chosen. Exiting.")
         return
 
     app.config["TARGET_DIR"] = folder
 
-    # 2) Launch Flask in a background thread (so we can open a browser)
-    def run_server():
-        app.run(port=5000, debug=False)
+    # 2) Open default browser to the frontend page
+    webbrowser.open("http://127.0.0.1:8000/index.html")
 
-    thread = threading.Thread(target=run_server, daemon=True)
-    thread.start()
-
-    # 3) Open default browser to the frontend page
-    webbrowser.open("http://127.0.0.1:5000/index.html")
-
-    # 4) Prevent main thread from exiting immediately
-    thread.join()
+    # 3) Run Flask on the main thread (threaded=True for concurrent requests, disable reloader)
+    app.run(port=8000, debug=False, threaded=True, use_reloader=False)
 
 
 if __name__ == "__main__":
