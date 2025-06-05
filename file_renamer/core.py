@@ -1,4 +1,6 @@
-"""Module providing a function printing python version."""
+"""
+Stateless file-renaming functions
+"""
 
 import os
 from typing import Dict
@@ -14,7 +16,7 @@ def build_replace_mapping(
     and build a mapping { old_name: new_name } without touching disk.
     """
     out: Dict[str, str] = {}
-    for fname in os.listdir(directory):
+    for fname in sorted(os.listdir(directory)):
         if change_this in fname:
             new_name = fname.replace(change_this, to_this)
             out[fname] = new_name
@@ -28,10 +30,10 @@ def apply_mapping(directory: str, mapping: Dict[str, str]) -> None:
         old_path = os.path.join(directory, old)
         new_path = os.path.join(directory, new)
         if not os.path.exists(old_path):
-            # You may choose to log or raise, but skip if it’s gone
+            # TODO handle old path is gone
             continue
         if os.path.exists(new_path):
-            # Skip or handle collisions
+            # TODO handle new path collisions
             continue
         os.rename(old_path, new_path)
 
@@ -45,7 +47,7 @@ def build_prefix_mapping(
     """
     return {
         filename: prefix + filename
-        for filename in os.listdir(directory)
+        for filename in sorted(os.listdir(directory))
         if not filename.startswith(prefix)
     }
 
@@ -58,7 +60,7 @@ def build_suffix_mapping(
     that does not already end with `suffix` (ignoring the extension).
     """
     mapping: Dict[str, str] = {}
-    for filename in os.listdir(directory):
+    for filename in sorted(os.listdir(directory)):
         root, ext = os.path.splitext(filename)
         if root.endswith(suffix):
             continue
@@ -66,6 +68,7 @@ def build_suffix_mapping(
         mapping[filename] = new_name
     return mapping
 
+# TODO optional sort func
 def build_enum_mapping(
     directory: str,
     start: int = 1,
@@ -77,7 +80,7 @@ def build_enum_mapping(
     Enumeration starts at `start` and increments by 1, separated by `sep`.
     """
     mapping: Dict[str, str] = {}
-    filenames = os.listdir(directory)
+    filenames = sorted(os.listdir(directory))
     for idx, filename in enumerate(filenames):
         root, ext = os.path.splitext(filename)
         number = str(idx + start)
@@ -88,6 +91,7 @@ def build_enum_mapping(
         mapping[filename] = new_name
     return mapping
 
+# TODO optional sort func
 def build_rename_with_enum(
     directory: str,
     basename: str
@@ -97,7 +101,7 @@ def build_rename_with_enum(
     Indexing starts at 1 and increases by 1 for each file.
     """
     mapping: Dict[str, str] = {}
-    filenames = os.listdir(directory)
+    filenames = sorted(os.listdir(directory))
     for idx, filename in enumerate(filenames):
         _, ext = os.path.splitext(filename)
         new_name = f"{basename}{idx + 1}{ext}"
@@ -115,7 +119,7 @@ def build_add_from_file_mapping(
     the first capture group to the filename, preserving extension.
     """
     mapping: Dict[str, str] = {}
-    filenames = os.listdir(directory)
+    filenames = sorted(os.listdir(directory))
     for filename in filenames:
         if not filename.lower().endswith(".txt"):
             continue

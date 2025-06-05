@@ -1,96 +1,96 @@
-# FileReNamer
+# FileRenamer
 
-Easily rename files in bulk with this Python program. Created to simplify the task of renaming a lot of files, it was written in less time than it would have taken to manually fix the filename typo in those 2000 images I exported.
+Easily rename files in bulk with this Python application. Originally created to simplify renaming many files quickly, FileRenamer now provides both a browser-based GUI and command-line interface (CLI), with support for undo/redo of batch operations.
 
 ## Getting started
 
+**Requirements**
+- Python 3.7+
+
+**Clone the repository**  
 ```sh
-# Clone the repo 
 git clone https://github.com/TurbulentRice/file_renamer.git
 cd file_renamer/
-
-# Run the python launcher to create venv, install dependencies, and start the app
-python3 run.py
-
-# Run the console script, optionally specifying target directory
-rename-files [--target TARGET_DIRECTORY]
-
-# Alternatively, run the script as a module
-python -m file_renamer [--target TARGET_DIRECTORY]
-
-# NOTE: TARGET_DIRECTORY path can be relative
 ```
 
-## Usage
-
-### Search and replace
-
-ex. Replace occurences of "IMG" with "PHOTO", and "_sm" with nothing:
-
+**Launch the application**  
+The cross-platform Python launcher script will:
+1. Create a virtual environment (`.venv/`) if missing.  
+2. Install Python dependencies.  
+3. Start a local web UI in your default browser.  
 ```sh
-your_folder/
-|-- IMG_0001_sm.png -> PHOTO_0001.png
-|-- IMG_0002_sm.png -> PHOTO_0002.png
-|-- IMG_0003_sm.png -> PHOTO_0003.png
-|-- ...
+./run.py
 ```
 
-### Add prefixes
+**Notes**
+- On some systems, you may need to mark `run.py` as executable: `chmod +x run.py`.
+- To use the command line tool, see "Command-Line Interface (WIP)" below
 
-ex. Add "IMG_" to the beginning of each filename:
 
-```sh
-your_folder/
-|-- 0001.png -> IMG_0001.png
-|-- 0002.png -> IMG_0002.png
-|-- 0003.png -> IMG_0003.png
-|-- ...
+## Features
+
+- **Web-based GUI**  
+  - Launches a local web server and opens your default browser.  
+  - Native folder picker to select the target directory.  
+  - Choose from several operations:  
+    - **Search & Replace**: Replace substrings in filenames.  
+    - **Add Prefix/Suffix**: Prepend or append text.  
+    - **Enumerate**: Prepend or append incremental numbers.  
+    - **Rename with Enumeration**: Overwrite filenames entirely with a base name + index.  
+    - **Add from File**: For `.txt` files, uses a regex to extract content and add it to the filename.  
+  - **Live Preview**: Shows old and new filenames before applying.  
+  - **Undo/Redo**: Revert or reapply the last batch operation.
+
+- **Command-Line Interface (WIP)**  
+`python -m file_renamer`.  
+  - Accepts flags for replace, prefix, suffix, enumeration, dry-run, and recursive.  
+  - Example:
+    ```sh
+    rename-files --target ./photos --replace "IMG_"="PIC_" --suffix "_edited" --yes
+    ```
+
+- **Undo/Redo Support**  
+  - Both the web UI and the CLI track the last rename mapping.  
+  - In the web UI, click **Undo** or **Redo** after a batch rename.  
+  - In Python code, use the `FileRenamer` class to call `.undo()` or `.redo()`
+
+## Examples
+
+### Web UI Workflow
+
+1. `./run.py`  
+2. A browser window opens:  
+   - Click **Change Directory** to select your folder.  
+   - Pick an action (Replace, Prefix, Suffix, Enumerate, etc.).  
+   - Type in the parameters (e.g. replace “IMG” with “PHOTO”).  
+   - Click **Preview** to see old vs. new names.  
+   - Click **Rename Files** to apply.  
+   - If you make a mistake, click **Undo** to revert or **Redo** to reapply.
+
+### Using the `FileRenamer` class in Python
+
+```python
+from file_renamer.filerenamer import FileRenamer
+
+# Instantiate for a folder
+fr = FileRenamer("/path/to/my_folder")
+
+# Build a mapping and apply
+mapping = fr.replace_mapping("old", "new")
+fr.apply_mapping(mapping)
+
+# Chain methods (each step renames on disk)
+# e.g. ["DSC_A.jpg", "DSC_B,jpg"] -> ["PRE_IMG_A_1.jpg", "PRE_IMG_B_2.jpg"]
+fr.replace("DSC", "IMG").prefix("PRE_").enum(start=1)
+
+# Undo the last operation
+fr.undo()
+
+# Redo it
+fr.redo()
 ```
 
-### Add sufixes
 
-ex. Add "_sm" to end of each filename:
+## License
 
-```sh
-your_folder/
-|-- IMG_0001.png -> IMG_0001_sm.png
-|-- IMG_0002.png -> IMG_0002_sm.png
-|-- IMG_0003.png -> IMG_0003_sm.png
-|-- ...
-```
-
-### Enumerate (WIP)
-
-Add numbers to filenames:
-
-```sh
-your_folder/
-|-- logo.png        -> 01_logo.png
-|-- background.png  -> 02_background.png
-|-- header.png      -> 03_header.png
-|-- ...
-```
-
-### Add from file (WIP)
-
-Use some content from within the file that is being changed to determine its new name.
-
-For example, say you had a folder like this:
-
-```sh
-your_folder/
-|-- address_file01.txt
-|-- address_file02.txt
-|-- address_file03.txt
-|-- ...
-```
-
-Where each `address_file.txt` contains a zipcode somehwere in its contents, and you want to organize the files by those zipcode values. Using regular expressions, we can search the file contents for a zipcode, and rename them so they look like this:
-
-```sh
-your_folder/
-|-- 01234.txt
-|-- 43210.txt
-|-- 99999.txt
-|-- ...
-```
+MIT License © [TurbulentRice](https://github.com/TurbulentRice)
