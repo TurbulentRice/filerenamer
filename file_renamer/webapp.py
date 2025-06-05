@@ -1,126 +1,67 @@
 """
 Web application for bulk file renaming.
 
-This module provides a Flask web application that exposes the file renaming functionality
+This module provides a Flask web application that exposes FileRenamer functionality
 through a REST API. It allows users to:
 
 - List files in a target directory
 - Preview file renaming operations before applying them
-- Apply renaming operations to files
-
-The application uses the core file renaming logic from file_renamer.core module.
+- Apply, undo, and redo renaming operations to files
 
 Routes:
     /api/list-files (GET) - Returns list of files in target directory
     /api/preview (POST) - Shows preview of renaming operations
     /api/apply (POST) - Applies renaming operations to files
-
-Configuration:
-    TARGET_DIR - Directory containing files to be renamed
 """
 
-
 import os
-import sys
-import subprocess
-import shutil
 import webbrowser
 from flask import Flask, jsonify, request
 from flask import send_from_directory
-from file_renamer.file_renamer import FileReNamer
+from functools import wraps
+from file_renamer.filerenamer import FileRenamerSingleton
+from file_renamer.util import prompt_for_directory
 
 
-def prompt_for_directory(title: str = "Select folder to rename files in") -> str:
-    """
-    Cross-platform folder picker:
-      - macOS: use AppleScript via osascript (executes in separate process).
-      - Windows: use Tkinter’s askdirectory() (works on main thread).
-      - Linux: try 'zenity' first, then fallback to Tkinter.
-    Returns a POSIX path string or "" if the user canceled.
-    """
-    # macOS: use AppleScript via osascript
-    if sys.platform == "darwin":
-        apple_script = f'POSIX path of (choose folder with prompt "{title}")'
-        try:
-            output = subprocess.check_output(["osascript", "-e", apple_script])
-            return output.decode().strip()
-        except subprocess.CalledProcessError:
-            return ""
-    
-    # Windows: use Tkinter
-    if os.name == "nt":
-        import tkinter as tk
-        from tkinter import filedialog
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        folder = filedialog.askdirectory(title=title)
-        root.destroy()
-        return folder or ""
-    
-    # Linux: try 'zenity' first, else Tkinter
-    if sys.platform.startswith("linux"):
-        zenity_path = shutil.which("zenity")
-        if zenity_path:
-            try:
-                output = subprocess.check_output([zenity_path, "--file-selection", "--directory", "--title", title])
-                return output.decode().strip()
-            except subprocess.CalledProcessError:
-                return ""
-        import tkinter as tk
-        from tkinter import filedialog
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
-        folder = filedialog.askdirectory(title=title)
-        root.destroy()
-        return folder or ""
-    
-    # Fallback: Tkinter for other platforms
-    import tkinter as tk
-    from tkinter import filedialog
-    root = tk.Tk()
-    root.withdraw()
-    root.attributes("-topmost", True)
-    folder = filedialog.askdirectory(title=title)
-    root.destroy()
-    return folder or ""
-
+def with_filerenamer(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        fr = FileRenamerSingleton.get()
+        if fr is None:
+            return jsonify({"error": "FileRenamer not initialized"}), 500
+        return func(*args, **kwargs)
+    return wrapper
 
 app = Flask(__name__)
-app.config["TARGET_DIR"] = None  # set after folder‐picker
 
 @app.route("/", methods=["GET"])
 @app.route("/index.html", methods=["GET"])
 def serve_index():
     return send_from_directory(os.path.join(os.path.dirname(__file__), "templates"), "index.html")
 
+@with_filerenamer
 @app.route("/api/list-files", methods=["GET"])
 def list_files():
     """
-    Return JSON list of all filenames in TARGET_DIR.
+    Return JSON list of all filenames in target dir.
     """
-    d = app.config["TARGET_DIR"]
-    if d is None or not os.path.isdir(d):
-        return jsonify({"error": "No target directory set"}), 400
-
-    files = sorted(os.listdir(d))
+    fr = FileRenamerSingleton.get()
+    files = fr.filenames
     return jsonify({"files": files})
 
 
+@with_filerenamer
 @app.route("/api/preview", methods=["POST"])
 def preview_mapping():
     """
     Given JSON payload like {"action":"replace","change_this":"foo","to_this":"bar"},
     call the corresponding core.* function to get a mapping, then return it.
     """
+    fr = FileRenamerSingleton.get()
+
     data = request.json or {}
-    d = app.config["TARGET_DIR"]
-    if d is None or not os.path.isdir(d):
-        return jsonify({"error": "No target directory set"}), 400
 
     action = data.get("action")
-    fr = FileReNamer(d)
     if action == "replace":
         change_this = data["change_this"]
         to_this     = data["to_this"]
@@ -146,39 +87,76 @@ def preview_mapping():
     return jsonify({"mapping": mapping})
 
 
+@with_filerenamer
 @app.route("/api/apply", methods=["POST"])
 def apply_mapping():
     """
     Given JSON payload {"mapping": { old_name: new_name, ... }},
     actually rename on disk. Return success or error.
     """
+    fr = FileRenamerSingleton.get()
+
     data = request.json or {}
     mapping = data.get("mapping", {})
-    d = app.config["TARGET_DIR"]
-    if d is None or not os.path.isdir(d):
-        return jsonify({"error": "No target directory set"}), 400
 
-    # You could add more validation here (e.g., confirm no collisions)
-    fr = FileReNamer(d)
+    # TODO add more validation here (e.g., confirm no collisions)
     fr.apply_mapping(mapping)
-    return jsonify({"status": "ok"}), 200
+    files = fr.filenames
+    return jsonify({"status": "ok", "files": files}), 200
 
 
-# --- New route for changing directory via native dialog ---
+# --- Change directory via native dialog ---
 @app.route("/api/change-dir", methods=["POST"])
 def change_directory():
     """
-    Open a native folder picker, set TARGET_DIR to the chosen folder,
-    and return the new file list.
+    Open a native folder picker, set the new directory, return new file list.
     """
     folder = prompt_for_directory("Select new target directory")
-
-    if not folder or not os.path.isdir(folder):
-        return jsonify({"error": "No folder chosen or invalid directory"}), 400
-
-    app.config["TARGET_DIR"] = folder
-    files = sorted(os.listdir(folder))
+    if not folder:
+        return jsonify({"error": "No folder chosen"}), 400
+    try:
+        FileRenamerSingleton.initialize(folder)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    fr = FileRenamerSingleton.get()
+    files = fr.filenames
     return jsonify({"files": files, "target_dir": folder}), 200
+
+@with_filerenamer
+@app.route("/api/undo", methods=["POST"])
+def undo_operation():
+    """
+    Revert the most recently applied mapping on target dir.
+    """
+    fr = FileRenamerSingleton.get()
+
+    try:
+        fr.undo()
+        files = fr.filenames
+        return jsonify({"status": "ok", "files": files}), 200
+    except IndexError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Undo failed: {e}"}), 500
+
+
+# --- New /api/redo route ---
+@with_filerenamer
+@app.route("/api/redo", methods=["POST"])
+def redo_operation():
+    """
+    Reapply the most recently undone mapping on target dir.
+    """
+    fr = FileRenamerSingleton.get()
+
+    try:
+        fr.redo()
+        files = fr.filenames
+        return jsonify({"status": "ok", "files": files}), 200
+    except IndexError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Redo failed: {e}"}), 500
 
 
 def main():
@@ -188,7 +166,8 @@ def main():
         print("No folder chosen. Exiting.")
         return
 
-    app.config["TARGET_DIR"] = folder
+    # Initialize filerenamer singleton
+    FileRenamerSingleton.initialize(folder)
 
     # 2) Open default browser to the frontend page
     webbrowser.open("http://127.0.0.1:8000/index.html")

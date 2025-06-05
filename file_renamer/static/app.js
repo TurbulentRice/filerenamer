@@ -8,6 +8,11 @@
   const changeDirBtn = document.getElementById("changeDirBtn");
   const currentDirSpan = document.getElementById("currentDir");
 
+  const applyBtn = document.getElementById("applyBtn");
+  const undoBtn = document.getElementById("undoBtn");
+  const redoBtn = document.getElementById("redoBtn");
+  const statusDiv = document.getElementById("status");
+
   function setCurrentDir(dir) {
     currentDirSpan.textContent = "Directory: " + dir;
   }
@@ -87,23 +92,37 @@
     });
   }
 
+  function createFileList(files) {
+    const tbody = document.querySelector("#previewTable tbody");
+    tbody.innerHTML = "";
+    for (const fname of files) {
+      const row = document.createElement("tr");
+      const tdOld = document.createElement("td");
+      tdOld.textContent = fname;
+      const tdNew = document.createElement("td");
+      tdNew.textContent = "";
+      row.appendChild(tdOld);
+      row.appendChild(tdNew);
+      tbody.appendChild(row);
+    }
+  }
+
   function loadFileList() {
     fetch("/api/list-files")
       .then(res => res.json())
       .then(data => {
         const files = data.files || [];
-        const tbody = document.querySelector("#previewTable tbody");
-        tbody.innerHTML = "";
-        for (const fname of files) {
-          const row = document.createElement("tr");
-          const tdOld = document.createElement("td");
-          tdOld.textContent = fname;
-          const tdNew = document.createElement("td");
-          tdNew.textContent = fname;
-          row.appendChild(tdOld);
-          row.appendChild(tdNew);
-          tbody.appendChild(row);
-        }
+        createFileList(files)
+      });
+  }
+
+  function refreshFileList() {
+    fetch("/api/list-files")
+      .then(res => res.json())
+      .then(data => {
+        const files = data.files || [];
+        createFileList(files)
+        applyBtn.disabled = true;
       });
   }
 
@@ -137,7 +156,7 @@
 
   document.getElementById("previewBtn").addEventListener("click", doPreview);
 
-  document.getElementById("applyBtn").addEventListener("click", () => {
+  applyBtn.addEventListener("click", () => {
     if (!window.currentMapping) return;
     fetch("/api/apply", {
       method: "POST",
@@ -147,15 +166,56 @@
     .then(res => res.json())
     .then(resp => {
       if (resp.status === "ok") {
-        alert("Files renamed successfully!");
-        // Optionally re-run preview or reload file list
-        loadFileList();
-        window.currentMapping = null;
-        document.getElementById("applyBtn").disabled = true;
+        statusDiv.textContent = "✅ Rename complete.";
+        undoBtn.disabled = false;
+        redoBtn.disabled = true;
+        refreshFileList();
       } else {
         alert("Error applying renames: " + (resp.error || "unknown"));
       }
     });
+  });
+
+  undoBtn.addEventListener("click", () => {
+    statusDiv.textContent = "⏳ Undoing last operation...";
+    fetch("/api/undo", { method: "POST" })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          alert(data.error);
+          statusDiv.textContent = "";
+          return;
+        }
+        statusDiv.textContent = "↷ Undo successful.";
+        undoBtn.disabled = true;
+        redoBtn.disabled = false;
+        refreshFileList();
+      })
+      .catch(err => {
+        statusDiv.textContent = "";
+        alert("Undo failed: " + err);
+      });
+  });
+
+  redoBtn.addEventListener("click", () => {
+    statusDiv.textContent = "⏳ Redoing last operation...";
+    fetch("/api/redo", { method: "POST" })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          alert(data.error);
+          statusDiv.textContent = "";
+          return;
+        }
+        statusDiv.textContent = "↷ Redo successful.";
+        undoBtn.disabled = false;
+        redoBtn.disabled = true;
+        refreshFileList();
+      })
+      .catch(err => {
+        statusDiv.textContent = "";
+        alert("Redo failed: " + err);
+      });
   });
 
   // Add keypress listeners to inputs to trigger preview on Enter
@@ -175,5 +235,7 @@
   // On initial page load, populate the table with “just list all files as old → old”
   window.addEventListener("DOMContentLoaded", () => {
     loadFileList();
+    undoBtn.disabled = true;
+    redoBtn.disabled = true;
   });
 })()

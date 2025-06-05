@@ -38,26 +38,28 @@ def ensure_tkinter():
 
 def check_python_version():
     if sys.version_info < (3, 7):
-        print("Python 3.7 or higher is required.")
+        print("⚠️  Python 3.7 or higher is required.")
         sys.exit(1)
 
 def create_venv():
     try:
         subprocess.check_call([sys.executable, "-m", "venv", ".venv"])
     except subprocess.CalledProcessError:
-        print("Failed to create virtual environment.")
+        print("⚠️  Failed to create virtual environment.")
         sys.exit(1)
 
 def install_requirements(venv_python):
     try:
+        subprocess.check_call([venv_python, "-m", "pip", "install", "--upgrade", "pip"])
         subprocess.check_call([venv_python, "-m", "pip", "install", "-r", "requirements.txt"])
     except subprocess.CalledProcessError:
-        print("Failed to install requirements.")
+        print("⚠️  Failed to install requirements.")
         sys.exit(1)
 
 def main():
-    ensure_tkinter()
     check_python_version()
+    # TODO get rid of tkinter lol
+    ensure_tkinter()
     print("🐍 Creating virtual environment…")
     create_venv()
     if os.name == "nt":
