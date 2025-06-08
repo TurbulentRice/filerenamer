@@ -30,6 +30,8 @@ The cross-platform Python launcher script will:
 ## Features
 
 ### Web-based GUI
+![GUI example](./example.png)
+
 - Launches a local web server and opens your default browser.  
 - Native folder picker to select the target directory, or Tkinter.  
 - Choose from several operations:  

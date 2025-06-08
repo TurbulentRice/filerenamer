@@ -16,7 +16,7 @@ body.dark-mode {
 }
 body {
   font-family: "Segoe UI", Arial, sans-serif;
-  margin: 1rem 2rem;
+  margin: 2rem 4rem;
   background: var(--bg);
   color: var(--fg);
   transition: background 0.2s ease, color 0.2s ease;
