@@ -69,7 +69,7 @@ def main():
     print("📦 Installing dependencies…")
     install_requirements(venv_python)
     print("✅ Dependencies installed, launching app 🚀")
-    os.execv(venv_python, [venv_python, "-m", "file_renamer.webapp"])
+    os.execv(venv_python, [venv_python, "-m", "filerenamer.webapp"])
 
 if __name__ == "__main__":
     main()
