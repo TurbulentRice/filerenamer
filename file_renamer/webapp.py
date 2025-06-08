@@ -19,7 +19,7 @@ import webbrowser
 from flask import Flask, jsonify, request
 from flask import send_from_directory
 from functools import wraps
-from file_renamer.filerenamer import FileRenamerSingleton
+from file_renamer.core import FileRenamerSingleton
 from file_renamer.util import prompt_for_directory
 
 

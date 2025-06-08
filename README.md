@@ -7,13 +7,13 @@ Easily rename files in bulk with this Python application. Originally created to 
 **Requirements**
 - Python 3.7+
 
-**Clone the repository**  
+**Clone the repository**
 ```sh
-git clone https://github.com/TurbulentRice/file_renamer.git
-cd file_renamer/
+git clone https://github.com/TurbulentRice/filerenamer.git
+cd filerenamer/
 ```
 
-**Launch the application**  
+**Launch the application**
 The cross-platform Python launcher script will:
 1. Create a virtual environment (`.venv/`) if missing.  
 2. Install Python dependencies.  
@@ -29,24 +29,43 @@ The cross-platform Python launcher script will:
 
 ## Features
 
-- **Web-based GUI**  
-  - Launches a local web server and opens your default browser.  
-  - Native folder picker to select the target directory.  
-  - Choose from several operations:  
-    - **Search & Replace**: Replace substrings in filenames.  
-    - **Add Prefix/Suffix**: Prepend or append text.  
-    - **Enumerate**: Prepend or append incremental numbers.  
-    - **Rename with Enumeration**: Overwrite filenames entirely with a base name + index.  
-    - **Add from File**: For `.txt` files, uses a regex to extract content and add it to the filename.  
-  - **Live Preview**: Shows old and new filenames before applying.  
-  - **Undo/Redo**: Revert or reapply the last batch operation.
+### Web-based GUI
+- Launches a local web server and opens your default browser.  
+- Native folder picker to select the target directory, or Tkinter.  
+- Choose from several operations:  
+  - **Search & Replace**: Replace substrings in filenames.  
+  - **Add Prefix/Suffix**: Prepend or append text.  
+  - **Enumerate**: Prepend or append incremental numbers.  
+  - **Rename with Enumeration**: Overwrite filenames entirely with a base name + index.  
+  - **Add from File**: For `.txt` files, uses a regex to extract content and add it to the filename.  
+- **Live Preview**: Shows old and new filenames before applying.  
+- **Undo/Redo**: Revert or reapply the last batch operation.
 
-- **Command-Line Interface (WIP)**  
-`python -m file_renamer`.  
-  - Accepts flags for replace, prefix, suffix, enumeration, dry-run, and recursive.  
+### Command-Line Interface
+
+`.venv/bin/python -m file_renamer.cli`
+
+  Arguments:
+    --target, -t: Target directory containing files to rename
+    --replace, -r: Replace occurrences in filenames (format: old=new)
+    --prefix, -p: Add prefix to all filenames
+    --suffix, -s: Add suffix to all filenames
+    --enum: Enable file enumeration
+    --enum-start: Starting number for enumeration
+    --enum-loc: Location for enumeration (start/end)
+    --enum-sep: Separator for enumeration
+    --rename-with-enum: Base name for enumerated renaming
+    --add-from-file: Regex pattern to extract from .txt files
+    --add-loc: Location to add extracted content (start/end)
+    --undo: Undo the last rename operation
+    --redo: Redo the last undone operation
+    --dry-run: Preview changes without applying them
+    --recursive: Include files in subdirectories
+    --yes: Skip confirmation prompt
+
   - Example:
     ```sh
-    rename-files --target ./photos --replace "IMG_"="PIC_" --suffix "_edited" --yes
+     .venv/bin/python --target ./photos --replace "IMG_"="PIC_" --suffix "_edited" --yes
     ```
 
 - **Undo/Redo Support**  
