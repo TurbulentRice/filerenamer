@@ -28,7 +28,7 @@ Usage Examples:
 
 import sys
 import argparse
-from file_renamer.core import FileRenamer
+from filerenamer.core import FileRenamer
 
 def main():
     parser = argparse.ArgumentParser(description="Batch rename files via FileRenamer.")
