@@ -1,7 +1,149 @@
-body { font-family: sans-serif; margin: 1rem; }
-table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-th, td { border: 1px solid #ccc; padding: 0.5rem; }
-th { background: #eee; }
+:root {
+  --bg: #ffffff;
+  --fg: #000000;
+  --accent: #007bff;
+  --table-head: #f2f2f2;
+  --disabled: #999999;
+  --table-border: #999999;
+}
+body.dark-mode {
+  --bg: #1e1e1e;
+  --fg: #d4d4d4;
+  --accent: #4dabf7;
+  --table-head: #2d2d2d;
+  --disabled: #555555;
+  --table-border: #d4d4d4;
+}
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  margin: 1rem 2rem;
+  background: var(--bg);
+  color: var(--fg);
+  transition: background 0.2s ease, color 0.2s ease;
+}
 input, select { margin-right: 1rem; }
-.button { padding: 0.5rem 1rem; background: #007BFF; color: white; border: none; cursor: pointer; }
-.button:disabled { background: #999; }
+ .button {
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.button:disabled {
+  background: var(--disabled);
+  cursor: not-allowed;
+}
+#applyBtn, #undoBtn, #redoBtn {
+  margin-top: 0.5rem;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  table-layout: fixed;
+  border: 2px solid var(--table-border);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+th, td {
+  border-bottom: 1px solid #e0e0e0;
+  border-right: 1px solid #e0e0e0;
+  padding: 0.5rem;
+  overflow-wrap: anywhere;
+}
+/* Remove right border on last child to avoid double border */
+td:last-child, th:last-child {
+  border-right: none;
+}
+th {
+  background: var(--table-head);
+  position: sticky;
+  top: 0;
+}
+tbody {
+  max-height: 60vh;
+  overflow-y: auto;
+  display: block;
+}
+thead, tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+@media (max-width: 600px) {
+  label {
+    display: block;
+    margin-top: 0.5rem;
+  }
+  input[type="text"], input[type="number"], select {
+    width: 100%;
+    margin-top: 0.2rem;
+  }
+}
+
+/* Custom toggle switch for dark mode */
+.theme-toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+  margin-right: 0.5rem;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 28px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+.switch input:checked + .slider {
+  background-color: var(--accent);
+}
+.switch input:checked + .slider:before {
+  transform: translateX(22px);
+}
+/* Optional: highlight focus */
+.switch input:focus + .slider {
+  box-shadow: 0 0 1px var(--accent);
+}
+.toggle-label {
+  font-size: 1rem;
+  color: var(--fg);
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
