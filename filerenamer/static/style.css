@@ -16,7 +16,8 @@ body.dark-mode {
 }
 body {
   font-family: "Segoe UI", Arial, sans-serif;
-  margin: 2rem 4rem;
+  max-width: 80%;
+  margin: 2rem auto;
   background: var(--bg);
   color: var(--fg);
   transition: background 0.2s ease, color 0.2s ease;
@@ -39,20 +40,29 @@ input, select { margin-right: 1rem; }
 }
 table {
   border-collapse: collapse;
+  border-spacing: 0;
   width: 100%;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
   table-layout: fixed;
-  border: 2px solid var(--table-border);
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  /* Show vertical scrollbar hint */
+  tbody::-webkit-scrollbar {
+    width: 8px;
+  }
+  tbody::-webkit-scrollbar-thumb {
+    background-color: var(--disabled);
+    border-radius: 4px;
+  }
 }
 th, td {
   border-bottom: 1px solid #e0e0e0;
   border-right: 1px solid #e0e0e0;
   padding: 0.5rem;
   overflow-wrap: anywhere;
+}
+thead th {
+  border-right: none; /* remove vertical header border to align with scrollbar offset */
 }
 /* Remove right border on last child to avoid double border */
 td:last-child, th:last-child {
@@ -67,6 +77,8 @@ tbody {
   max-height: 60vh;
   overflow-y: auto;
   display: block;
+  /* Reserve space for scrollbar so header columns stay aligned */
+  scrollbar-gutter: stable;
 }
 thead, tbody tr {
   display: table;
@@ -145,5 +157,4 @@ thead, tbody tr {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
 }

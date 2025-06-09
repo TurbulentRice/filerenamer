@@ -13,6 +13,19 @@
   const redoBtn = document.getElementById("redoBtn");
   const statusDiv = document.getElementById("status");
 
+  const themeToggle = document.getElementById("themeToggle");
+  const userPref = localStorage.getItem("filerenamer-theme");
+  
+  // Dark‑mode toggle
+  if (userPref === "dark") {
+    document.body.classList.add("dark-mode");
+    themeToggle.checked = true;
+  }
+  themeToggle.addEventListener("change", () => {
+    document.body.classList.toggle("dark-mode", themeToggle.checked);
+    localStorage.setItem("filerenamer-theme", themeToggle.checked ? "dark" : "light");
+  });
+
   function setCurrentDir(dir) {
     currentDirSpan.textContent = "Directory: " + dir;
   }
