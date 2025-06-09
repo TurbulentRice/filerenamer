@@ -7,34 +7,16 @@ import subprocess
 os.environ.setdefault("TK_SILENCE_DEPRECATION", "1")
 
 def ensure_tkinter():
-    try:
-        import tkinter
-    except (ImportError, ModuleNotFoundError):
-        if os.name == "nt":
+    """
+    Ensure tkinter is available on Windows. Other platforms
+    use native folder pickers (osascript/zenity) in the web app.
+    """
+    if os.name == "nt":
+        try:
+            import tkinter
+        except (ImportError, ModuleNotFoundError):
             print("Tkinter not found. Please install it manually on Windows.")
             sys.exit(1)
-        elif sys.platform.startswith("darwin"):
-            try:
-                subprocess.check_call(["brew", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                try:
-                    subprocess.check_call(["brew", "install", "python-tk"])
-                except subprocess.CalledProcessError:
-                    pass
-                try:
-                    import tkinter
-                except (ImportError, ModuleNotFoundError):
-                    print("Please install Tkinter manually (e.g., via your Python installer or `brew install python-tk`).")
-                    sys.exit(1)
-            except subprocess.CalledProcessError:
-                print("Homebrew not found; please install Tkinter via your Python installer or use `brew install python-tk` if you have Homebrew.")
-                sys.exit(1)
-        else:
-            try:
-                subprocess.check_call(["sudo", "apt-get", "update"])
-                subprocess.check_call(["sudo", "apt-get", "install", "-y", "python3-tk"])
-            except subprocess.CalledProcessError:
-                print("Please install Tkinter manually (e.g., `sudo apt-get install python3-tk`).")
-                sys.exit(1)
 
 def check_python_version():
     if sys.version_info < (3, 7):
@@ -58,7 +40,6 @@ def install_requirements(venv_python):
 
 def main():
     check_python_version()
-    # TODO get rid of tkinter lol
     ensure_tkinter()
     print("🐍 Creating virtual environment…")
     create_venv()
