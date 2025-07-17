@@ -1,4 +1,7 @@
 (function(){
+  // -- Directory navigation state --
+  let currentPath = '';
+
   const actionSelect = document.getElementById("actionSelect");
   const replaceInputs = document.getElementById("replaceInputs");
   const prefixInputs  = document.getElementById("prefixInputs");
@@ -6,7 +9,7 @@
   const enumInputs    = document.getElementById("enumInputs");
 
   const changeDirBtn = document.getElementById("changeDirBtn");
-  const currentDirSpan = document.getElementById("currentDir");
+  const currentDirSelect = document.getElementById("currentDirSelect");
 
   const applyBtn = document.getElementById("applyBtn");
   const undoBtn = document.getElementById("undoBtn");
@@ -26,8 +29,20 @@
     localStorage.setItem("filerenamer-theme", themeToggle.checked ? "dark" : "light");
   });
 
-  function setCurrentDir(dir) {
-    currentDirSpan.textContent = "Directory: " + dir;
+  async function refreshDir(path) {
+    let url = "/api/list_dir";
+    if (path) url += `?path=${encodeURIComponent(path)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    currentPath = data.current;
+    currentDirSelect.innerHTML = "";
+    // Show current directory as first option
+    currentDirSelect.append(new Option(data.current, data.current));
+    // Option to go up
+    currentDirSelect.append(new Option("..", ".."));
+    data.dirs.forEach(d => currentDirSelect.append(new Option(d, d)));
+    // Set the selected value to current directory
+    currentDirSelect.value = data.current;
   }
 
   // Show/hide the correct input fields based on selected action
@@ -120,51 +135,72 @@
     }
   }
 
-  function loadFileList() {
-    fetch("/api/list-files")
+  function loadFileList(path) {
+    let url = "/api/list_files";
+    if (path) url += `?path=${encodeURIComponent(path)}`;
+    fetch(url)
       .then(res => res.json())
       .then(data => {
         const files = data.files || [];
-        createFileList(files)
-      });
-  }
-
-  function refreshFileList() {
-    fetch("/api/list-files")
-      .then(res => res.json())
-      .then(data => {
-        const files = data.files || [];
-        createFileList(files)
+        createFileList(files);
         applyBtn.disabled = true;
       });
   }
 
   changeDirBtn.addEventListener("click", () => {
-    fetch("/api/change-dir", { method: "POST" })
+    fetch("/api/change_dir_prompt", { method: "POST" })
       .then(res => res.json())
       .then(data => {
         if (data.error) {
-          alert(data.error);
+          // Swallow it for now, an alert is annoying
+          // alert(data.error);
           return;
         }
-        setCurrentDir(data.target_dir);
         const files = data.files || [];
-        const tbody = document.querySelector("#previewTable tbody");
-        tbody.innerHTML = "";
-        files.forEach(file => {
-          const row = document.createElement("tr");
-          const tdOld = document.createElement("td");
-          tdOld.textContent = file;
-          const tdNew = document.createElement("td");
-          tdNew.textContent = "";
-          row.appendChild(tdOld);
-          row.appendChild(tdNew);
-          tbody.appendChild(row);
-        });
+        createFileList(files);
         applyBtn.disabled = true;
         statusDiv.textContent = "";
         window.currentMapping = null;
+        // refresh dropdown to this directory
+        refreshDir(data.target_dir);
       });
+  });
+
+  document.getElementById("currentDirSelect").addEventListener("change", (e) => {
+    const sel = e.target.value;
+    let next;
+    if (sel === currentPath) {
+      // No change
+      return;
+    } else if (sel === "..") {
+      // Let backend handle going up
+      next = sel;
+    } else {
+      // Navigate into selected subfolder
+      next = `${currentPath}/${sel}`;
+    }
+    fetch("/api/change_dir_path", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target_dir: next })
+    })
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}`);
+      }
+      return res.json();
+    })
+    .then(data => {
+      createFileList(data.files || []);
+      applyBtn.disabled = true;
+      statusDiv.textContent = "";
+      window.currentMapping = null;
+      // Refresh dropdown based on new directory
+      refreshDir(data.target_dir);
+    })
+    .catch(err => {
+      alert(err.message);
+    });
   });
 
   document.getElementById("previewBtn").addEventListener("click", doPreview);
@@ -182,7 +218,7 @@
         statusDiv.textContent = "✅ Rename complete.";
         undoBtn.disabled = false;
         redoBtn.disabled = true;
-        refreshFileList();
+        loadFileList();
       } else {
         alert("Error applying renames: " + (resp.error || "unknown"));
       }
@@ -202,7 +238,7 @@
         statusDiv.textContent = "↷ Undo successful.";
         undoBtn.disabled = true;
         redoBtn.disabled = false;
-        refreshFileList();
+        loadFileList();
       })
       .catch(err => {
         statusDiv.textContent = "";
@@ -223,7 +259,7 @@
         statusDiv.textContent = "↷ Redo successful.";
         undoBtn.disabled = false;
         redoBtn.disabled = true;
-        refreshFileList();
+        loadFileList();
       })
       .catch(err => {
         statusDiv.textContent = "";
@@ -246,8 +282,10 @@
   });
 
   // On initial page load, populate the table with “just list all files as old → old”
-  window.addEventListener("DOMContentLoaded", () => {
-    loadFileList();
+  window.addEventListener("DOMContentLoaded", async () => {
+    // initialize navigation and file list
+    await refreshDir();
+    loadFileList(currentPath);
     undoBtn.disabled = true;
     redoBtn.disabled = true;
   });

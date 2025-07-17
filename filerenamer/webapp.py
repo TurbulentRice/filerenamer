@@ -20,7 +20,7 @@ from flask import Flask, jsonify, request
 from flask import send_from_directory
 from functools import wraps
 from filerenamer.core import FileRenamerSingleton
-from filerenamer.util import prompt_for_directory
+from filerenamer.util import prompt_for_directory, list_directories
 
 
 def with_filerenamer(func):
@@ -40,7 +40,7 @@ def serve_index():
     return send_from_directory(os.path.join(os.path.dirname(__file__), "templates"), "index.html")
 
 @with_filerenamer
-@app.route("/api/list-files", methods=["GET"])
+@app.route("/api/list_files", methods=["GET"])
 def list_files():
     """
     Return JSON list of all filenames in target dir.
@@ -106,7 +106,7 @@ def apply_mapping():
 
 
 # --- Change directory via native dialog ---
-@app.route("/api/change-dir", methods=["POST"])
+@app.route("/api/change_dir_prompt", methods=["POST"])
 def change_directory():
     """
     Open a native folder picker, set the new directory, return new file list.
@@ -121,6 +121,48 @@ def change_directory():
     fr = FileRenamerSingleton.get()
     files = fr.filenames
     return jsonify({"files": files, "target_dir": folder}), 200
+
+# --- Change directory to provided path ---
+@app.route("/api/change_dir_path", methods=["POST"])
+def change_directory_path():
+    """
+    Set a new directory, return new file list.
+    """
+    data = request.json or {}
+    raw_target = data.get("target_dir")
+    if not raw_target:
+        return jsonify({"error": "No folder chosen"}), 400
+
+    # Resolve '..' relative to current directory, or join relative paths
+    fr = FileRenamerSingleton.get()
+    current_dir = fr.directory
+    if raw_target == "..":
+        new_dir = os.path.dirname(current_dir)
+    elif os.path.isabs(raw_target):
+        new_dir = raw_target
+    else:
+        new_dir = os.path.normpath(os.path.join(current_dir, raw_target))
+
+    try:
+        FileRenamerSingleton.initialize(new_dir)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    fr = FileRenamerSingleton.get()
+    files = fr.filenames
+    return jsonify({"files": files, "target_dir": new_dir}), 200
+
+
+@app.route("/api/list_dir", methods=["GET"])
+def list_dir():
+    """
+    JSON endpoint to list subdirectories of a given path.
+    Query param: ?path=<directory>
+    """
+    # Use provided path or default to current directory
+    target = request.args.get("path") or FileRenamerSingleton.get().directory
+    dirs = list_directories(target)
+    return jsonify({"current": target, "dirs": dirs})
 
 @with_filerenamer
 @app.route("/api/undo", methods=["POST"])
