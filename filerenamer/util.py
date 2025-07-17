@@ -7,7 +7,7 @@ def prompt_for_directory(title: str = "Select folder to rename files in") -> str
     """
     Cross-platform folder picker:
       - macOS: use AppleScript via osascript (executes in separate process).
-      - Windows: use Tkinter’s askdirectory() (works on main thread).
+      - Windows: use Tkinter's askdirectory() (works on main thread).
       - Linux: try 'zenity' first, then fallback to Tkinter.
     Returns a POSIX path string or "" if the user canceled.
     """
@@ -58,3 +58,16 @@ def prompt_for_directory(title: str = "Select folder to rename files in") -> str
     folder = filedialog.askdirectory(title=title)
     root.destroy()
     return folder or ""
+
+def list_directories(path: str) -> list:
+    """
+    Return a sorted list of subdirectories in the given path.
+    If the path is invalid or not a directory, returns an empty list.
+    """
+    try:
+        return sorted([
+            d for d in os.listdir(path)
+            if os.path.isdir(os.path.join(path, d))
+        ])
+    except Exception:
+        return []
