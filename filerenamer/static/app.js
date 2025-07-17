@@ -2,21 +2,22 @@
   // -- Directory navigation state --
   let currentPath = '';
 
-  const actionSelect = document.getElementById("actionSelect");
-  const replaceInputs = document.getElementById("replaceInputs");
-  const prefixInputs  = document.getElementById("prefixInputs");
-  const suffixInputs  = document.getElementById("suffixInputs");
-  const enumInputs    = document.getElementById("enumInputs");
+  const actionSelect = document.getElementById("action-select");
+  const replaceInputs = document.getElementById("replace-inputs");
+  const prefixInputs  = document.getElementById("prefix-inputs");
+  const suffixInputs  = document.getElementById("suffix-inputs");
+  const enumInputs    = document.getElementById("enum-inputs");
 
-  const changeDirBtn = document.getElementById("changeDirBtn");
-  const currentDirSelect = document.getElementById("currentDirSelect");
+  const changeDirBtn = document.getElementById("change-dir-btn");
+  const currentDirSelect = document.getElementById("current-dir-select");
 
-  const applyBtn = document.getElementById("applyBtn");
-  const undoBtn = document.getElementById("undoBtn");
-  const redoBtn = document.getElementById("redoBtn");
+  const tableBody = document.querySelector("#preview-table tbody");
+  const applyBtn = document.getElementById("apply-btn");
+  const undoBtn = document.getElementById("undo-btn");
+  const redoBtn = document.getElementById("redo-btn");
   const statusDiv = document.getElementById("status");
 
-  const themeToggle = document.getElementById("themeToggle");
+  const themeToggle = document.getElementById("theme-toggle");
   const userPref = localStorage.getItem("filerenamer-theme");
   
   // Dark‑mode toggle
@@ -29,11 +30,15 @@
     localStorage.setItem("filerenamer-theme", themeToggle.checked ? "dark" : "light");
   });
 
-  async function refreshDir(path) {
+  async function listDirAsync(path) {
     let url = "/api/list_dir";
     if (path) url += `?path=${encodeURIComponent(path)}`;
-    const res = await fetch(url);
-    const data = await res.json();
+    return fetch(url)
+      .then(res => res.json())
+  }
+
+  async function refreshDir(path) {
+    const data = await listDirAsync(path);
     currentPath = data.current;
     currentDirSelect.innerHTML = "";
     // Show current directory as first option
@@ -66,7 +71,7 @@
         enumInputs.style.display = "";
         break;
     }
-    document.getElementById("applyBtn").disabled = true; 
+    applyBtn.disabled = true; 
   });
 
   function doPreview() {
@@ -74,21 +79,21 @@
     let payload = { action: action };
 
     if (action === "replace") {
-      const from = document.getElementById("replaceFrom").value;
-      const to   = document.getElementById("replaceTo").value;
+      const from = document.getElementById("replace-from").value;
+      const to   = document.getElementById("replace-to").value;
       payload.change_this = from;
       payload.to_this     = to;
     }
     else if (action === "prefix") {
-      payload.prefix = document.getElementById("prefixValue").value;
+      payload.prefix = document.getElementById("prefix-value").value;
     }
     else if (action === "suffix") {
-      payload.suffix = document.getElementById("suffixValue").value;
+      payload.suffix = document.getElementById("suffix-value").value;
     }
     else if (action === "enum") {
-      payload.start = parseInt(document.getElementById("enumStart").value);
-      payload.sep   = document.getElementById("enumSep").value;
-      payload.loc   = document.getElementById("enumLoc").value;
+      payload.start = parseInt(document.getElementById("enum-start").value);
+      payload.sep   = document.getElementById("enum-sep").value;
+      payload.loc   = document.getElementById("enum-loc").value;
     }
 
     fetch("/api/preview", {
@@ -99,8 +104,7 @@
     .then(res => res.json())
     .then(data => {
       const mapping = data.mapping || {};
-      const tbody = document.querySelector("#previewTable tbody");
-      tbody.innerHTML = "";
+      tableBody.innerHTML = "";
 
       for (const [oldName, newName] of Object.entries(mapping)) {
         const row = document.createElement("tr");
@@ -110,19 +114,18 @@
         tdNew.textContent = newName;
         row.appendChild(tdOld);
         row.appendChild(tdNew);
-        tbody.appendChild(row);
+        tableBody.appendChild(row);
       }
 
       // Enable the “Rename Files” button only if there’s at least one mapping
-      document.getElementById("applyBtn").disabled = Object.keys(mapping).length === 0;
+      applyBtn.disabled = Object.keys(mapping).length === 0;
       // Store the mapping in a global so we can re-use it on “apply”
       window.currentMapping = mapping;
     });
   }
 
   function createFileList(files) {
-    const tbody = document.querySelector("#previewTable tbody");
-    tbody.innerHTML = "";
+    tableBody.innerHTML = "";
     for (const fname of files) {
       const row = document.createElement("tr");
       const tdOld = document.createElement("td");
@@ -131,25 +134,32 @@
       tdNew.textContent = "";
       row.appendChild(tdOld);
       row.appendChild(tdNew);
-      tbody.appendChild(row);
+      tableBody.appendChild(row);
     }
   }
 
   function loadFileList(path) {
-    let url = "/api/list_files";
-    if (path) url += `?path=${encodeURIComponent(path)}`;
-    fetch(url)
-      .then(res => res.json())
+    listFilesAsync(path)
       .then(data => {
         const files = data.files || [];
         createFileList(files);
-        applyBtn.disabled = true;
       });
   }
 
-  changeDirBtn.addEventListener("click", () => {
-    fetch("/api/change_dir_prompt", { method: "POST" })
+  async function listFilesAsync(path) {
+    let url = "/api/list_files";
+    if (path) url += `?path=${encodeURIComponent(path)}`;
+    return fetch(url)
       .then(res => res.json())
+  }
+
+  async function changeDirPromptAsync() {
+    return fetch("/api/change_dir_prompt", { method: "POST" })
+      .then(res => res.json())
+  }
+
+  changeDirBtn.addEventListener("click", () => {
+    changeDirPromptAsync()
       .then(data => {
         if (data.error) {
           // Swallow it for now, an alert is annoying
@@ -166,7 +176,15 @@
       });
   });
 
-  document.getElementById("currentDirSelect").addEventListener("change", (e) => {
+  async function changeDirPathAsync(path) {
+    return fetch("/api/change_dir_path", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target_dir: path })
+    })
+    .then(res => res.json())
+  }
+  document.getElementById("current-dir-select").addEventListener("change", (e) => {
     const sel = e.target.value;
     let next;
     if (sel === currentPath) {
@@ -179,31 +197,21 @@
       // Navigate into selected subfolder
       next = `${currentPath}/${sel}`;
     }
-    fetch("/api/change_dir_path", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ target_dir: next })
-    })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error(`Error ${res.status}`);
-      }
-      return res.json();
-    })
-    .then(data => {
-      createFileList(data.files || []);
-      applyBtn.disabled = true;
-      statusDiv.textContent = "";
-      window.currentMapping = null;
-      // Refresh dropdown based on new directory
-      refreshDir(data.target_dir);
-    })
-    .catch(err => {
-      alert(err.message);
-    });
+    changeDirPathAsync(next)
+      .then(data => {
+        createFileList(data.files || []);
+        applyBtn.disabled = true;
+        statusDiv.textContent = "";
+        window.currentMapping = null;
+        // Refresh dropdown based on new directory
+        refreshDir(data.target_dir);
+      })
+      .catch(err => {
+        alert(err.message);
+      });
   });
 
-  document.getElementById("previewBtn").addEventListener("click", doPreview);
+  document.getElementById("preview-btn").addEventListener("click", doPreview);
 
   applyBtn.addEventListener("click", () => {
     if (!window.currentMapping) return;
@@ -268,12 +276,12 @@
   });
 
   // Add keypress listeners to inputs to trigger preview on Enter
-  const inputIds = ["replaceFrom", "replaceTo", "prefixValue", "suffixValue", "enumStart", "enumSep"];
+  const inputIds = ["replace-from", "replace-to", "prefix-value", "suffix-value", "enum-start", "enum-sep", "enum-loc"];
   inputIds.forEach(id => {
     const input = document.getElementById(id);
     if (input) {
       input.addEventListener("keydown", (e) => {
-        if (e.keyCode === 13 || e.key === "Enter") {
+        if (e.key === "Enter") {
           e.preventDefault();
           doPreview();
         }

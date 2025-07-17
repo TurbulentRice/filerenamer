@@ -11,23 +11,28 @@
     <h1>FileRenamer</h1>
     <div class="theme-toggle-container">
       <label class="switch">
-        <input type="checkbox" id="themeToggle">
+        <input type="checkbox" id="theme-toggle">
         <span class="slider"></span>
       </label>
       <span class="toggle-label">Dark Mode</span>
     </div>
   </div>
 
-  <div style="margin-bottom: 1rem;">
-    <button class="button" id="changeDirBtn">Change Directory</button>
-    <select id="currentDirSelect" style="margin-left: 1rem;"></select>
+  <div class="folder-nav">
+    <button id="change-dir-btn" class="btn btn-icon" aria-label="Select folder">
+      <!-- Folder SVG icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <path d="M10 4H2v16h20V6H12l-2-2z"/>
+      </svg>
+    </button>
+    <select id="current-dir-select"></select>
   </div>
 
-  <div style="margin-bottom: 1rem;">
+  <div class="action-row">
     <!-- Action selector -->
     <label>
       Action:
-      <select id="actionSelect">
+      <select id="action-select">
         <option value="replace">Replace</option>
         <option value="prefix">Add Prefix</option>
         <option value="suffix">Add Suffix</option>
@@ -36,38 +41,38 @@
     </label>
 
     <!-- Inputs for “replace” -->
-    <span id="replaceInputs">
-      <label>Change this: <input type="text" id="replaceFrom" /></label>
-      <label>To this:     <input type="text" id="replaceTo"   /></label>
+    <span id="replace-inputs">
+      <label>Change this: <input type="text" id="replace-from" /></label>
+      <label>To this:     <input type="text" id="replace-to"   /></label>
     </span>
 
     <!-- Inputs for prefix -->
-    <span id="prefixInputs" style="display:none;">
-      <label>Prefix: <input type="text" id="prefixValue" /></label>
+    <span id="prefix-inputs" style="display:none;">
+      <label>Prefix: <input type="text" id="prefix-value" /></label>
     </span>
 
     <!-- Inputs for suffix -->
-    <span id="suffixInputs" style="display:none;">
-      <label>Suffix: <input type="text" id="suffixValue" /></label>
+    <span id="suffix-inputs" style="display:none;">
+      <label>Suffix: <input type="text" id="suffix-value" /></label>
     </span>
 
     <!-- Inputs for enum -->
-    <span id="enumInputs" style="display:none;">
-      <label>Start #: <input type="number" id="enumStart" value="1" /></label>
-      <label>Separator: <input type="text" id="enumSep" value="_" /></label>
+    <span id="enum-inputs" style="display:none;">
+      <label>Start #: <input type="number" id="enum-start" value="1" /></label>
+      <label>Separator: <input type="text" id="enum-sep" value="_" /></label>
       <label>Location:
-        <select id="enumLoc">
+        <select id="enum-loc">
           <option value="end">End</option>
           <option value="start">Start</option>
         </select>
       </label>
     </span>
 
-    <button class="button" id="previewBtn">Preview</button>
+    <button class="btn" id="preview-btn">Preview</button>
   </div>
 
   <!-- Preview table -->
-  <table id="previewTable">
+  <table id="preview-table">
     <thead>
       <tr>
         <th>Old Name</th>
@@ -79,9 +84,9 @@
     </tbody>
   </table>
 
-  <button class="button" id="applyBtn" disabled>Rename Files</button>
-  <button class="button" id="undoBtn" disabled>Undo</button>
-  <button class="button" id="redoBtn" disabled>Redo</button>
+  <button class="btn" id="apply-btn" disabled>Rename Files</button>
+  <button class="btn" id="undo-btn" disabled>Undo</button>
+  <button class="btn" id="redo-btn" disabled>Redo</button>
   <div id="status" style="margin-top:1rem; color: green;"></div>
 
 </script>
